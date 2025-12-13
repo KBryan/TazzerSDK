@@ -1,4 +1,4 @@
-# ⚡ Crypto Clicker Quest
+# ⚡ Tazzer SDK Crypto Clicker Quest
 
 A Phaser 3 clicker game with cross-chain crypto payments via the Trails API. Players mine coins by clicking a crystal and can purchase permanent upgrades using ETH from any supported blockchain.
 
