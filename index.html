@@ -1,0 +1,1820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tazzer SDK Example</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0a0a0f;
+      font-family: 'VT323', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+
+    /* Scanline effect */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+              0deg,
+              rgba(0, 0, 0, 0.15),
+              rgba(0, 0, 0, 0.15) 1px,
+              transparent 1px,
+              transparent 2px
+      );
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    header {
+      width: 100%;
+      padding: 20px;
+      background: linear-gradient(180deg, #1a1a2e 0%, #0a0a0f 100%);
+      border-bottom: 3px solid #00ff88;
+      box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .logo {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 18px;
+      color: #00ff88;
+      text-shadow:
+              0 0 10px #00ff88,
+              0 0 20px #00ff88,
+              0 0 40px #00ff88;
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+      from { text-shadow: 0 0 10px #00ff88, 0 0 20px #00ff88; }
+      to { text-shadow: 0 0 20px #00ff88, 0 0 40px #00ff88, 0 0 60px #00ff88; }
+    }
+
+    .wallet-section {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .wallet-btn {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 10px;
+      padding: 12px 20px;
+      background: linear-gradient(135deg, #ff6b35 0%, #ff3366 100%);
+      border: none;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    }
+
+    .wallet-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(255, 107, 53, 0.5);
+    }
+
+    .wallet-btn.connected {
+      background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+    }
+
+    .wallet-address {
+      font-family: 'VT323', monospace;
+      font-size: 16px;
+      color: #00ff88;
+      background: rgba(0, 255, 136, 0.1);
+      padding: 8px 12px;
+      border: 1px solid #00ff88;
+    }
+
+    main {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      padding: 20px;
+      max-width: 1400px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    #game-container {
+      width: 500px;
+      height: 400px;
+      border: 4px solid #00ff88;
+      box-shadow:
+              0 0 20px rgba(0, 255, 136, 0.3),
+              inset 0 0 60px rgba(0, 0, 0, 0.5);
+      background: #0d0d15;
+      flex-shrink: 0;
+    }
+
+    .shop-panel {
+      background: linear-gradient(180deg, #1a1a2e 0%, #12121a 100%);
+      border: 3px solid #ff6b35;
+      padding: 20px;
+      min-width: 320px;
+      max-width: 400px;
+      box-shadow: 0 0 30px rgba(255, 107, 53, 0.2);
+    }
+
+    .shop-title {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 14px;
+      color: #ff6b35;
+      text-align: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px dashed #ff6b35;
+      text-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
+    }
+
+    .shop-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 2px solid #333;
+      padding: 15px;
+      margin-bottom: 15px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .shop-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .shop-item:hover::before {
+      left: 100%;
+    }
+
+    .shop-item:hover {
+      border-color: #00ff88;
+      box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+    }
+
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .item-name {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 10px;
+      color: #fff;
+    }
+
+    .item-price {
+      font-family: 'VT323', monospace;
+      font-size: 18px;
+      color: #00ff88;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .item-price img {
+      width: 16px;
+      height: 16px;
+    }
+
+    .item-desc {
+      font-size: 18px;
+      color: #888;
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+
+    .buy-btn {
+      width: 100%;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 9px;
+      padding: 12px;
+      background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+      border: none;
+      color: #0a0a0f;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .buy-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(0, 255, 136, 0.4);
+    }
+
+    .buy-btn:disabled {
+      background: #333;
+      color: #666;
+      cursor: not-allowed;
+    }
+
+    .buy-btn.processing {
+      background: linear-gradient(135deg, #ff6b35 0%, #ff3366 100%);
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .stats-bar {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      padding: 15px;
+      background: rgba(0, 255, 136, 0.05);
+      border: 1px solid #00ff88;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+
+    .stat-value {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 12px;
+      color: #00ff88;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(5px);
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    /* Checkout Modal */
+    .checkout-modal {
+      background: linear-gradient(180deg, #1a1a2e 0%, #0a0a0f 100%);
+      border: 2px solid #00ff88;
+      width: 90%;
+      max-width: 420px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow:
+              0 0 60px rgba(0, 255, 136, 0.3),
+              0 0 100px rgba(0, 255, 136, 0.1);
+      animation: modalSlide 0.3s ease;
+    }
+
+    @keyframes modalSlide {
+      from { transform: translateY(-30px) scale(0.95); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    .checkout-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      border-bottom: 1px solid rgba(0, 255, 136, 0.2);
+    }
+
+    .checkout-title {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 11px;
+      color: #00ff88;
+      margin: 0;
+    }
+
+    .checkout-close {
+      background: none;
+      border: none;
+      color: #666;
+      font-size: 20px;
+      cursor: pointer;
+      transition: color 0.2s;
+      padding: 5px;
+    }
+
+    .checkout-close:hover {
+      color: #ff3366;
+    }
+
+    /* Steps */
+    .checkout-step {
+      display: none;
+      padding: 20px;
+    }
+
+    .checkout-step[data-active="true"] {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* Item Preview */
+    .checkout-item-preview {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 15px;
+      background: rgba(0, 255, 136, 0.05);
+      border: 1px solid rgba(0, 255, 136, 0.2);
+      margin-bottom: 20px;
+    }
+
+    .item-icon {
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #00ff88, #00cc6a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      border-radius: 8px;
+    }
+
+    .checkout-item-preview .item-info {
+      flex: 1;
+    }
+
+    .item-preview-name {
+      display: block;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 10px;
+      color: #fff;
+      margin-bottom: 5px;
+    }
+
+    .item-preview-price {
+      font-size: 18px;
+      color: #00ff88;
+    }
+
+    /* Payment Section */
+    .payment-section {
+      margin-bottom: 20px;
+    }
+
+    .section-label {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 8px;
+      color: #666;
+      margin-bottom: 12px;
+      letter-spacing: 1px;
+    }
+
+    .chain-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .chain-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid #333;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .chain-option:hover {
+      border-color: #00ff88;
+      background: rgba(0, 255, 136, 0.05);
+    }
+
+    .chain-option[data-selected="true"] {
+      border-color: #00ff88;
+      background: rgba(0, 255, 136, 0.1);
+    }
+
+    .chain-option[data-selected="true"] .chain-check {
+      opacity: 1;
+    }
+
+    .chain-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #333, #222);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 16px;
+      color: #00ff88;
+    }
+
+    .chain-details {
+      flex: 1;
+    }
+
+    .chain-name {
+      display: block;
+      font-size: 16px;
+      color: #fff;
+      margin-bottom: 2px;
+    }
+
+    .chain-balance {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .chain-check {
+      color: #00ff88;
+      font-size: 18px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    /* Quote Details */
+    .quote-details {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 15px;
+      margin-bottom: 20px;
+      border: 1px solid #222;
+    }
+
+    .quote-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 14px;
+      color: #888;
+      border-bottom: 1px solid #222;
+    }
+
+    .quote-row:last-child {
+      border-bottom: none;
+    }
+
+    .quote-row.total {
+      color: #fff;
+      font-size: 16px;
+      padding-top: 12px;
+      margin-top: 5px;
+      border-top: 1px solid #00ff88;
+      border-bottom: none;
+    }
+
+    .quote-row.total span:last-child {
+      color: #00ff88;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 12px;
+    }
+
+    /* Checkout Buttons */
+    .checkout-btn {
+      width: 100%;
+      padding: 16px 20px;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 10px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s;
+      margin-bottom: 10px;
+    }
+
+    .checkout-btn:last-child {
+      margin-bottom: 0;
+    }
+
+    .checkout-btn.primary {
+      background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+      color: #0a0a0f;
+    }
+
+    .checkout-btn.primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 25px rgba(0, 255, 136, 0.4);
+    }
+
+    .checkout-btn.secondary {
+      background: linear-gradient(135deg, #ff6b35 0%, #ff3366 100%);
+      color: #fff;
+    }
+
+    .checkout-btn.ghost {
+      background: transparent;
+      border: 1px solid #333;
+      color: #888;
+    }
+
+    .checkout-btn.ghost:hover {
+      border-color: #666;
+      color: #fff;
+    }
+
+    .checkout-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* Processing Step */
+    .processing-animation {
+      width: 100px;
+      height: 100px;
+      margin: 20px auto 30px;
+      position: relative;
+    }
+
+    .processing-ring {
+      position: absolute;
+      inset: 0;
+      border: 3px solid #222;
+      border-top-color: #00ff88;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .processing-icon {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+    }
+
+    .processing-status {
+      text-align: center;
+      font-size: 16px;
+      color: #888;
+      margin-bottom: 30px;
+    }
+
+    /* Transaction Steps */
+    .transaction-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .tx-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 15px;
+      padding: 15px 0;
+      border-left: 2px solid #333;
+      margin-left: 15px;
+      padding-left: 20px;
+      position: relative;
+    }
+
+    .tx-step:last-child {
+      border-left-color: transparent;
+    }
+
+    .tx-step::before {
+      content: '';
+      position: absolute;
+      left: -7px;
+      top: 15px;
+      width: 12px;
+      height: 12px;
+      background: #333;
+      border-radius: 50%;
+    }
+
+    .tx-step[data-status="active"]::before {
+      background: #00ff88;
+      box-shadow: 0 0 10px #00ff88;
+    }
+
+    .tx-step[data-status="complete"]::before {
+      background: #00ff88;
+    }
+
+    .tx-step[data-status="error"]::before {
+      background: #ff3366;
+    }
+
+    .tx-step-icon {
+      width: 30px;
+      height: 30px;
+      position: relative;
+    }
+
+    .tx-spinner {
+      display: none;
+      width: 100%;
+      height: 100%;
+      border: 2px solid #333;
+      border-top-color: #00ff88;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .tx-step[data-status="active"] .tx-spinner {
+      display: block;
+    }
+
+    .tx-check {
+      display: none;
+      width: 100%;
+      height: 100%;
+      background: #00ff88;
+      border-radius: 50%;
+      color: #0a0a0f;
+      font-size: 16px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .tx-step[data-status="complete"] .tx-check {
+      display: flex;
+    }
+
+    .tx-step-info {
+      flex: 1;
+    }
+
+    .tx-step-title {
+      display: block;
+      font-size: 14px;
+      color: #fff;
+      margin-bottom: 3px;
+    }
+
+    .tx-step[data-status="waiting"] .tx-step-title {
+      color: #666;
+    }
+
+    .tx-step-desc {
+      font-size: 12px;
+      color: #666;
+    }
+
+    /* Success Step */
+    .success-animation {
+      width: 100px;
+      height: 100px;
+      margin: 20px auto 30px;
+      position: relative;
+    }
+
+    .success-ring {
+      position: absolute;
+      inset: 0;
+      border: 3px solid #00ff88;
+      border-radius: 50%;
+      animation: successRing 0.5s ease-out;
+    }
+
+    @keyframes successRing {
+      from { transform: scale(0.5); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .success-check {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      color: #00ff88;
+      animation: successCheck 0.3s ease-out 0.2s both;
+    }
+
+    @keyframes successCheck {
+      from { transform: scale(0); }
+      to { transform: scale(1); }
+    }
+
+    .success-title {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 12px;
+      color: #00ff88;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .success-message {
+      text-align: center;
+      font-size: 16px;
+      color: #888;
+      margin-bottom: 25px;
+    }
+
+    .success-details {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+
+    .success-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .tx-hash {
+      color: #00ff88;
+      text-decoration: none;
+      font-family: monospace;
+    }
+
+    .tx-hash:hover {
+      text-decoration: underline;
+    }
+
+    /* Error Step */
+    .error-animation {
+      width: 100px;
+      height: 100px;
+      margin: 20px auto 30px;
+      position: relative;
+    }
+
+    .error-ring {
+      position: absolute;
+      inset: 0;
+      border: 3px solid #ff3366;
+      border-radius: 50%;
+    }
+
+    .error-x {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      color: #ff3366;
+    }
+
+    .error-title {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 12px;
+      color: #ff3366;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .error-message {
+      text-align: center;
+      font-size: 16px;
+      color: #888;
+      margin-bottom: 25px;
+    }
+
+    /* Toast notifications */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 3000;
+    }
+
+    .toast {
+      background: linear-gradient(135deg, #1a1a2e 0%, #0a0a0f 100%);
+      border: 2px solid #00ff88;
+      padding: 15px 20px;
+      margin-bottom: 10px;
+      font-size: 16px;
+      color: #00ff88;
+      animation: toastSlide 0.3s ease;
+      max-width: 300px;
+    }
+
+    .toast.error {
+      border-color: #ff3366;
+      color: #ff3366;
+    }
+
+    .toast.success {
+      border-color: #00ff88;
+      color: #00ff88;
+    }
+
+    @keyframes toastSlide {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .shop-panel {
+        min-width: 100%;
+      }
+
+      #game-container {
+        width: 100%;
+        max-width: 500px;
+        height: 400px;
+      }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="logo">⚡ CRYPTO CLICKER QUEST</div>
+  <div class="wallet-section">
+    <span class="wallet-address" id="wallet-display" style="display: none;"></span>
+    <button class="wallet-btn" id="connect-btn">CONNECT WALLET</button>
+  </div>
+</header>
+
+<div class="stats-bar">
+  <div class="stat">
+    <div class="stat-label">COINS</div>
+    <div class="stat-value" id="coins-display">0</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">PER CLICK</div>
+    <div class="stat-value" id="click-power-display">1</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">AUTO/SEC</div>
+    <div class="stat-value" id="auto-display">0</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">MULTIPLIER</div>
+    <div class="stat-value" id="multiplier-display">1x</div>
+  </div>
+</div>
+
+<main>
+  <div id="game-container"></div>
+
+  <div class="shop-panel">
+    <h2 class="shop-title">⚔️ POWER SHOP ⚔️</h2>
+
+    <div class="shop-item" data-item="click-boost">
+      <div class="item-header">
+        <span class="item-name">CLICK BOOST</span>
+        <span class="item-price">0.001 ETH</span>
+      </div>
+      <p class="item-desc">+10 coins per click permanently. Stack infinitely!</p>
+      <button class="buy-btn" onclick="purchaseItem('click-boost')">BUY WITH CRYPTO</button>
+    </div>
+
+    <div class="shop-item" data-item="auto-miner">
+      <div class="item-header">
+        <span class="item-name">AUTO MINER</span>
+        <span class="item-price">0.002 ETH</span>
+      </div>
+      <p class="item-desc">Generates 5 coins per second automatically.</p>
+      <button class="buy-btn" onclick="purchaseItem('auto-miner')">BUY WITH CRYPTO</button>
+    </div>
+
+    <div class="shop-item" data-item="multiplier">
+      <div class="item-header">
+        <span class="item-name">2X MULTIPLIER</span>
+        <span class="item-price">0.005 ETH</span>
+      </div>
+      <p class="item-desc">Doubles ALL coin generation for 5 minutes!</p>
+      <button class="buy-btn" onclick="purchaseItem('multiplier')">BUY WITH CRYPTO</button>
+    </div>
+
+    <div class="shop-item" data-item="mega-pack">
+      <div class="item-header">
+        <span class="item-name">MEGA PACK</span>
+        <span class="item-price">0.01 ETH</span>
+      </div>
+      <p class="item-desc">+50 click power, +20 auto/sec, and 10 min 2x boost!</p>
+      <button class="buy-btn" onclick="purchaseItem('mega-pack')">BUY WITH CRYPTO</button>
+    </div>
+  </div>
+</main>
+
+<!-- Purchase Modal -->
+<div class="modal-overlay" id="purchase-modal">
+  <div class="checkout-modal">
+    <!-- Header -->
+    <div class="checkout-header">
+      <h3 class="checkout-title" id="modal-title">PURCHASE ITEM</h3>
+      <button class="checkout-close" onclick="closeModal()">✕</button>
+    </div>
+
+    <!-- Step 1: Select Payment -->
+    <div class="checkout-step" id="step-select" data-active="true">
+      <div class="checkout-item-preview">
+        <div class="item-icon">⚡</div>
+        <div class="item-info">
+          <span class="item-preview-name" id="preview-name">Click Boost</span>
+          <span class="item-preview-price" id="preview-price">0.001 ETH</span>
+        </div>
+      </div>
+
+      <div class="payment-section">
+        <div class="section-label">PAY FROM</div>
+
+        <div class="chain-options" id="chain-options">
+          <div class="chain-option" data-chain="42161" data-selected="true">
+            <div class="chain-icon">◆</div>
+            <div class="chain-details">
+              <span class="chain-name">Arbitrum</span>
+              <span class="chain-balance">0.05 ETH</span>
+            </div>
+            <div class="chain-check">✓</div>
+          </div>
+          <div class="chain-option" data-chain="8453">
+            <div class="chain-icon">◉</div>
+            <div class="chain-details">
+              <span class="chain-name">Base</span>
+              <span class="chain-balance">0.12 ETH</span>
+            </div>
+            <div class="chain-check">✓</div>
+          </div>
+          <div class="chain-option" data-chain="1">
+            <div class="chain-icon">♦</div>
+            <div class="chain-details">
+              <span class="chain-name">Ethereum</span>
+              <span class="chain-balance">0.03 ETH</span>
+            </div>
+            <div class="chain-check">✓</div>
+          </div>
+          <div class="chain-option" data-chain="10">
+            <div class="chain-icon">○</div>
+            <div class="chain-details">
+              <span class="chain-name">Optimism</span>
+              <span class="chain-balance">0.08 ETH</span>
+            </div>
+            <div class="chain-check">✓</div>
+          </div>
+          <div class="chain-option" data-chain="137">
+            <div class="chain-icon">▲</div>
+            <div class="chain-details">
+              <span class="chain-name">Polygon</span>
+              <span class="chain-balance">15.2 MATIC</span>
+            </div>
+            <div class="chain-check">✓</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="quote-details" id="quote-details">
+        <div class="quote-row">
+          <span>Network Fee</span>
+          <span id="quote-fee">~$0.12</span>
+        </div>
+        <div class="quote-row">
+          <span>Route</span>
+          <span id="quote-route">Direct</span>
+        </div>
+        <div class="quote-row">
+          <span>Est. Time</span>
+          <span id="quote-time">~30 sec</span>
+        </div>
+        <div class="quote-row total">
+          <span>Total</span>
+          <span id="quote-total">0.001 ETH</span>
+        </div>
+      </div>
+
+      <button class="checkout-btn primary" id="confirm-btn" onclick="confirmPurchase()">
+        <span class="btn-text">CONFIRM PURCHASE</span>
+        <span class="btn-icon">→</span>
+      </button>
+    </div>
+
+    <!-- Step 2: Processing -->
+    <div class="checkout-step" id="step-processing" data-active="false">
+      <div class="processing-animation">
+        <div class="processing-ring"></div>
+        <div class="processing-icon">⚡</div>
+      </div>
+
+      <div class="processing-status" id="processing-status">
+        Preparing transaction...
+      </div>
+
+      <div class="transaction-steps">
+        <div class="tx-step" id="tx-step-1" data-status="pending">
+          <div class="tx-step-icon">
+            <div class="tx-spinner"></div>
+            <span class="tx-check">✓</span>
+          </div>
+          <div class="tx-step-info">
+            <span class="tx-step-title">Getting Quote</span>
+            <span class="tx-step-desc">Finding best route...</span>
+          </div>
+        </div>
+
+        <div class="tx-step" id="tx-step-2" data-status="waiting">
+          <div class="tx-step-icon">
+            <div class="tx-spinner"></div>
+            <span class="tx-check">✓</span>
+          </div>
+          <div class="tx-step-info">
+            <span class="tx-step-title">Sign Transaction</span>
+            <span class="tx-step-desc">Confirm in your wallet</span>
+          </div>
+        </div>
+
+        <div class="tx-step" id="tx-step-3" data-status="waiting">
+          <div class="tx-step-icon">
+            <div class="tx-spinner"></div>
+            <span class="tx-check">✓</span>
+          </div>
+          <div class="tx-step-info">
+            <span class="tx-step-title">Processing</span>
+            <span class="tx-step-desc">Cross-chain execution</span>
+          </div>
+        </div>
+
+        <div class="tx-step" id="tx-step-4" data-status="waiting">
+          <div class="tx-step-icon">
+            <div class="tx-spinner"></div>
+            <span class="tx-check">✓</span>
+          </div>
+          <div class="tx-step-info">
+            <span class="tx-step-title">Complete</span>
+            <span class="tx-step-desc">Item delivered!</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Success -->
+    <div class="checkout-step" id="step-success" data-active="false">
+      <div class="success-animation">
+        <div class="success-ring"></div>
+        <div class="success-check">✓</div>
+      </div>
+
+      <h3 class="success-title">PURCHASE COMPLETE!</h3>
+      <p class="success-message" id="success-message">Click Boost has been added to your inventory.</p>
+
+      <div class="success-details">
+        <div class="success-row">
+          <span>Transaction</span>
+          <a href="#" id="tx-link" target="_blank" class="tx-hash">0x08c5...bf395</a>
+        </div>
+      </div>
+
+      <button class="checkout-btn primary" onclick="closeModal()">
+        <span class="btn-text">CONTINUE PLAYING</span>
+        <span class="btn-icon">🎮</span>
+      </button>
+    </div>
+
+    <!-- Step 4: Error -->
+    <div class="checkout-step" id="step-error" data-active="false">
+      <div class="error-animation">
+        <div class="error-ring"></div>
+        <div class="error-x">✕</div>
+      </div>
+
+      <h3 class="error-title">TRANSACTION FAILED</h3>
+      <p class="error-message" id="error-message">Something went wrong. Please try again.</p>
+
+      <button class="checkout-btn secondary" onclick="retryPurchase()">
+        <span class="btn-text">TRY AGAIN</span>
+      </button>
+      <button class="checkout-btn ghost" onclick="closeModal()">
+        <span class="btn-text">CANCEL</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- Phaser -->
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
+
+<!-- Ethers for wallet connection -->
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
+
+<script>
+  // ===========================================
+  // GAME STATE
+  // ===========================================
+  const gameState = {
+    coins: 0,
+    clickPower: 1,
+    autoPerSecond: 0,
+    multiplier: 1,
+    multiplierEndTime: 0,
+    walletAddress: null,
+    provider: null,
+    signer: null
+  };
+
+  // Item prices in ETH
+  const SHOP_ITEMS = {
+    'click-boost': { price: 0.001, name: 'Click Boost' },
+    'auto-miner': { price: 0.002, name: 'Auto Miner' },
+    'multiplier': { price: 0.005, name: '2X Multiplier' },
+    'mega-pack': { price: 0.01, name: 'Mega Pack' }
+  };
+
+  let currentPurchaseItem = null;
+
+  // ===========================================
+  // TRAILS API SERVICE (Simulated for demo)
+  // ===========================================
+  class TrailsService {
+    constructor(apiKey) {
+      this.apiKey = apiKey;
+      this.baseUrl = 'https://api.trails.build'; // Actual API endpoint
+    }
+
+    // In production, this would call the real Trails API
+    async quoteIntent(params) {
+      console.log('🔄 Requesting quote from Trails API:', params);
+
+      // Simulated quote response
+      return {
+        intent: {
+          id: `intent_${Date.now()}`,
+          originChainId: params.originChainId,
+          destinationChainId: 8453, // Base
+          originTokenAmount: params.originTokenAmount,
+          estimatedFee: '0.0001',
+          estimatedTime: 30
+        },
+        quote: {
+          fromAmount: params.originTokenAmount,
+          toAmount: params.originTokenAmount,
+          priceImpact: '0.1%',
+          route: 'Relay Bridge'
+        }
+      };
+    }
+
+    async commitIntent(intent) {
+      console.log('📝 Committing intent:', intent);
+      return {
+        intentId: intent.id,
+        expiresAt: Date.now() + 300000 // 5 minutes
+      };
+    }
+
+    async executeIntent(intentId, signer) {
+      console.log('⚡ Executing intent:', intentId);
+
+      // In production, this would create and send the actual transaction
+      // For demo, we simulate the wallet interaction
+      if (signer) {
+        try {
+          // Simulate transaction signing
+          const tx = await signer.sendTransaction({
+            to: '0x0000000000000000000000000000000000000001', // Demo address
+            value: ethers.parseEther('0.0001') // Minimal test amount
+          });
+          console.log('📤 Transaction sent:', tx.hash);
+          return { txHash: tx.hash, status: 'pending' };
+        } catch (error) {
+          if (error.code === 'ACTION_REJECTED') {
+            throw new Error('Transaction rejected by user');
+          }
+          throw error;
+        }
+      }
+
+      // Fallback simulation
+      return {
+        txHash: `0x${Math.random().toString(16).slice(2)}`,
+        status: 'simulated'
+      };
+    }
+
+    async waitForReceipt(intentId) {
+      console.log('⏳ Waiting for receipt:', intentId);
+      // Simulate waiting
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      return {
+        status: 'completed',
+        destinationTxHash: `0x${Math.random().toString(16).slice(2)}`
+      };
+    }
+  }
+
+  // Initialize Trails service
+  const trails = new TrailsService('YOUR_API_KEY');
+
+  // ===========================================
+  // WALLET CONNECTION
+  // ===========================================
+  async function connectWallet() {
+    const btn = document.getElementById('connect-btn');
+    const display = document.getElementById('wallet-display');
+
+    if (gameState.walletAddress) {
+      // Disconnect
+      gameState.walletAddress = null;
+      gameState.provider = null;
+      gameState.signer = null;
+      btn.textContent = 'CONNECT WALLET';
+      btn.classList.remove('connected');
+      display.style.display = 'none';
+      showToast('Wallet disconnected', 'success');
+      return;
+    }
+
+    if (typeof window.ethereum === 'undefined') {
+      showToast('No wallet detected! Install MetaMask.', 'error');
+      return;
+    }
+
+    try {
+      btn.textContent = 'CONNECTING...';
+
+      gameState.provider = new ethers.BrowserProvider(window.ethereum);
+      gameState.signer = await gameState.provider.getSigner();
+      gameState.walletAddress = await gameState.signer.getAddress();
+
+      const shortAddress = `${gameState.walletAddress.slice(0, 6)}...${gameState.walletAddress.slice(-4)}`;
+      display.textContent = shortAddress;
+      display.style.display = 'block';
+
+      btn.textContent = 'DISCONNECT';
+      btn.classList.add('connected');
+
+      showToast(`Connected: ${shortAddress}`, 'success');
+    } catch (error) {
+      console.error('Wallet connection error:', error);
+      btn.textContent = 'CONNECT WALLET';
+      showToast('Failed to connect wallet', 'error');
+    }
+  }
+
+  document.getElementById('connect-btn').addEventListener('click', connectWallet);
+
+  // ===========================================
+  // CHECKOUT UI MANAGEMENT
+  // ===========================================
+  let selectedChainId = 42161; // Default to Arbitrum
+  let lastTxHash = null;
+
+  // Chain selection handlers
+  document.querySelectorAll('.chain-option').forEach(option => {
+    option.addEventListener('click', () => {
+      // Deselect all
+      document.querySelectorAll('.chain-option').forEach(o => o.dataset.selected = 'false');
+      // Select clicked
+      option.dataset.selected = 'true';
+      selectedChainId = parseInt(option.dataset.chain);
+      updateQuoteDisplay();
+    });
+  });
+
+  function updateQuoteDisplay() {
+    const item = SHOP_ITEMS[currentPurchaseItem];
+    if (!item) return;
+
+    // Update quote details based on selected chain
+    const isDirectRoute = selectedChainId === 8453; // Base = direct
+    document.getElementById('quote-route').textContent = isDirectRoute ? 'Direct' : 'Bridge via Relay';
+    document.getElementById('quote-fee').textContent = isDirectRoute ? '~$0.05' : '~$0.15';
+    document.getElementById('quote-time').textContent = isDirectRoute ? '~5 sec' : '~30 sec';
+    document.getElementById('quote-total').textContent = `${item.price} ETH`;
+  }
+
+  function showStep(stepName) {
+    document.querySelectorAll('.checkout-step').forEach(step => {
+      step.dataset.active = 'false';
+    });
+    document.getElementById(`step-${stepName}`).dataset.active = 'true';
+  }
+
+  function setTxStepStatus(stepNum, status) {
+    const step = document.getElementById(`tx-step-${stepNum}`);
+    if (step) {
+      step.dataset.status = status;
+    }
+  }
+
+  function updateProcessingStatus(message) {
+    document.getElementById('processing-status').textContent = message;
+  }
+
+  // ===========================================
+  // PURCHASE FLOW
+  // ===========================================
+  function purchaseItem(itemId) {
+    if (!gameState.walletAddress) {
+      showToast('Connect your wallet first!', 'error');
+      return;
+    }
+
+    const item = SHOP_ITEMS[itemId];
+    currentPurchaseItem = itemId;
+
+    // Update modal content
+    document.getElementById('modal-title').textContent = `PURCHASE`;
+    document.getElementById('preview-name').textContent = item.name;
+    document.getElementById('preview-price').textContent = `${item.price} ETH`;
+
+    // Reset to step 1
+    showStep('select');
+    resetTxSteps();
+    updateQuoteDisplay();
+
+    document.getElementById('purchase-modal').classList.add('active');
+  }
+
+  function closeModal() {
+    document.getElementById('purchase-modal').classList.remove('active');
+    currentPurchaseItem = null;
+    // Reset after animation
+    setTimeout(() => {
+      showStep('select');
+      resetTxSteps();
+    }, 300);
+  }
+
+  function resetTxSteps() {
+    for (let i = 1; i <= 4; i++) {
+      setTxStepStatus(i, 'waiting');
+    }
+  }
+
+  function retryPurchase() {
+    showStep('select');
+    resetTxSteps();
+  }
+
+  async function confirmPurchase() {
+    if (!currentPurchaseItem) return;
+
+    const item = SHOP_ITEMS[currentPurchaseItem];
+    const confirmBtn = document.getElementById('confirm-btn');
+
+    confirmBtn.disabled = true;
+
+    // Switch to processing view
+    showStep('processing');
+
+    try {
+      // Step 1: Get quote
+      setTxStepStatus(1, 'active');
+      updateProcessingStatus('Finding the best route...');
+
+      const quote = await trails.quoteIntent({
+        ownerAddress: gameState.walletAddress,
+        originChainId: selectedChainId,
+        originTokenAddress: '0x0000000000000000000000000000000000000000',
+        originTokenAmount: ethers.parseEther(item.price.toString()),
+        destinationChainId: 8453,
+        destinationTokenAddress: '0x0000000000000000000000000000000000000000',
+        destinationToAddress: '0xYOUR_GAME_TREASURY'
+      });
+
+      setTxStepStatus(1, 'complete');
+      await sleep(500);
+
+      // Step 2: Sign transaction
+      setTxStepStatus(2, 'active');
+      updateProcessingStatus('Please confirm in your wallet...');
+
+      const { intentId } = await trails.commitIntent(quote.intent);
+      const execution = await trails.executeIntent(intentId, gameState.signer);
+      lastTxHash = execution.txHash;
+
+      setTxStepStatus(2, 'complete');
+      await sleep(500);
+
+      // Step 3: Processing
+      setTxStepStatus(3, 'active');
+      updateProcessingStatus('Processing cross-chain transaction...');
+
+      const receipt = await trails.waitForReceipt(intentId);
+
+      setTxStepStatus(3, 'complete');
+      await sleep(500);
+
+      // Step 4: Complete
+      setTxStepStatus(4, 'active');
+      updateProcessingStatus('Finalizing...');
+      await sleep(300);
+      setTxStepStatus(4, 'complete');
+
+      // Apply the purchase
+      applyPurchase(currentPurchaseItem);
+
+      // Show success screen
+      await sleep(500);
+      document.getElementById('success-message').textContent =
+              `${item.name} has been added to your inventory!`;
+
+      // Update tx link
+      const txLink = document.getElementById('tx-link');
+      const shortHash = lastTxHash ? `${lastTxHash.slice(0, 6)}...${lastTxHash.slice(-6)}` : '0x...';
+      txLink.textContent = shortHash;
+      txLink.href = `https://arbiscan.io/tx/${lastTxHash}`;
+
+      showStep('success');
+
+    } catch (error) {
+      console.error('Purchase error:', error);
+
+      // Show error screen
+      document.getElementById('error-message').textContent =
+              error.message || 'Transaction failed. Please try again.';
+      showStep('error');
+
+    } finally {
+      confirmBtn.disabled = false;
+    }
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  function applyPurchase(itemId) {
+    switch (itemId) {
+      case 'click-boost':
+        gameState.clickPower += 10;
+        break;
+      case 'auto-miner':
+        gameState.autoPerSecond += 5;
+        break;
+      case 'multiplier':
+        gameState.multiplier = 2;
+        gameState.multiplierEndTime = Date.now() + 300000; // 5 minutes
+        break;
+      case 'mega-pack':
+        gameState.clickPower += 50;
+        gameState.autoPerSecond += 20;
+        gameState.multiplier = 2;
+        gameState.multiplierEndTime = Date.now() + 600000; // 10 minutes
+        break;
+    }
+    updateStatsDisplay();
+  }
+
+  // ===========================================
+  // UI HELPERS
+  // ===========================================
+  function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
+  function updateStatsDisplay() {
+    document.getElementById('coins-display').textContent = formatNumber(Math.floor(gameState.coins));
+    document.getElementById('click-power-display').textContent = formatNumber(gameState.clickPower);
+    document.getElementById('auto-display').textContent = formatNumber(gameState.autoPerSecond);
+    document.getElementById('multiplier-display').textContent = `${gameState.multiplier}x`;
+  }
+
+  function formatNumber(num) {
+    if (num >= 1000000000) return (num / 1000000000).toFixed(1) + 'B';
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    return num.toString();
+  }
+
+  // ===========================================
+  // PHASER GAME
+  // ===========================================
+  class MainScene extends Phaser.Scene {
+    constructor() {
+      super({ key: 'MainScene' });
+      this.crystal = null;
+      this.particles = null;
+      this.coinTexts = [];
+    }
+
+    preload() {
+      // Create graphics for the clickable crystal
+      this.createCrystalGraphics();
+    }
+
+    createCrystalGraphics() {
+      // Main crystal
+      const crystalGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+
+      // Crystal body (hexagonal shape)
+      crystalGraphics.fillStyle(0x00ff88, 1);
+      crystalGraphics.beginPath();
+      crystalGraphics.moveTo(60, 0);
+      crystalGraphics.lineTo(100, 30);
+      crystalGraphics.lineTo(100, 90);
+      crystalGraphics.lineTo(60, 120);
+      crystalGraphics.lineTo(20, 90);
+      crystalGraphics.lineTo(20, 30);
+      crystalGraphics.closePath();
+      crystalGraphics.fillPath();
+
+      // Inner highlight
+      crystalGraphics.fillStyle(0x80ffcc, 0.6);
+      crystalGraphics.beginPath();
+      crystalGraphics.moveTo(60, 10);
+      crystalGraphics.lineTo(85, 35);
+      crystalGraphics.lineTo(85, 70);
+      crystalGraphics.lineTo(60, 90);
+      crystalGraphics.lineTo(35, 70);
+      crystalGraphics.lineTo(35, 35);
+      crystalGraphics.closePath();
+      crystalGraphics.fillPath();
+
+      // Core glow
+      crystalGraphics.fillStyle(0xffffff, 0.8);
+      crystalGraphics.fillCircle(60, 55, 15);
+
+      crystalGraphics.generateTexture('crystal', 120, 120);
+
+      // Particle
+      const particleGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+      particleGraphics.fillStyle(0x00ff88, 1);
+      particleGraphics.fillCircle(8, 8, 8);
+      particleGraphics.generateTexture('particle', 16, 16);
+
+      // Coin particle
+      const coinGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+      coinGraphics.fillStyle(0xffd700, 1);
+      coinGraphics.fillCircle(10, 10, 10);
+      coinGraphics.fillStyle(0xffea00, 1);
+      coinGraphics.fillCircle(8, 8, 6);
+      coinGraphics.generateTexture('coin', 20, 20);
+    }
+
+    create() {
+      const centerX = this.cameras.main.width / 2;
+      const centerY = this.cameras.main.height / 2;
+
+      // Background particles
+      this.createBackgroundParticles(centerX, centerY);
+
+      // Main clickable crystal
+      this.crystal = this.add.image(centerX, centerY, 'crystal')
+              .setScale(1.5)
+              .setInteractive({ useHandCursor: true });
+
+      // Glow effect
+      this.crystal.preFX.addGlow(0x00ff88, 4, 0, false, 0.1, 16);
+
+      // Floating animation
+      this.tweens.add({
+        targets: this.crystal,
+        y: centerY - 10,
+        duration: 2000,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+      });
+
+      // Click handler
+      this.crystal.on('pointerdown', () => this.handleClick());
+
+      // Click text
+      this.clickText = this.add.text(centerX, centerY + 100, 'CLICK TO MINE!', {
+        fontFamily: '"Press Start 2P"',
+        fontSize: '12px',
+        color: '#00ff88'
+      }).setOrigin(0.5);
+
+      this.tweens.add({
+        targets: this.clickText,
+        alpha: 0.5,
+        duration: 800,
+        yoyo: true,
+        repeat: -1
+      });
+
+      // Coin emitter for click feedback
+      this.coinEmitter = this.add.particles(centerX, centerY, 'coin', {
+        speed: { min: 100, max: 200 },
+        angle: { min: 230, max: 310 },
+        scale: { start: 0.8, end: 0 },
+        lifespan: 1000,
+        gravityY: 300,
+        emitting: false
+      });
+
+      // Auto-generation timer
+      this.time.addEvent({
+        delay: 1000,
+        callback: this.autoGenerate,
+        callbackScope: this,
+        loop: true
+      });
+
+      // Multiplier check timer
+      this.time.addEvent({
+        delay: 1000,
+        callback: this.checkMultiplier,
+        callbackScope: this,
+        loop: true
+      });
+    }
+
+    createBackgroundParticles(centerX, centerY) {
+      this.add.particles(centerX, centerY, 'particle', {
+        speed: { min: 10, max: 30 },
+        scale: { start: 0.3, end: 0 },
+        alpha: { start: 0.5, end: 0 },
+        lifespan: 3000,
+        frequency: 200,
+        blendMode: 'ADD'
+      });
+    }
+
+    handleClick() {
+      // Calculate coins earned
+      const earned = gameState.clickPower * gameState.multiplier;
+      gameState.coins += earned;
+      updateStatsDisplay();
+
+      // Visual feedback - scale bounce
+      this.tweens.add({
+        targets: this.crystal,
+        scale: 1.7,
+        duration: 50,
+        yoyo: true,
+        ease: 'Power2'
+      });
+
+      // Emit coins
+      this.coinEmitter.explode(5);
+
+      // Floating number
+      this.showFloatingNumber(earned);
+
+      // Screen shake on big clicks
+      if (earned >= 100) {
+        this.cameras.main.shake(100, 0.005);
+      }
+    }
+
+    showFloatingNumber(amount) {
+      const centerX = this.cameras.main.width / 2;
+      const centerY = this.cameras.main.height / 2;
+
+      const offsetX = Phaser.Math.Between(-30, 30);
+      const text = this.add.text(centerX + offsetX, centerY - 50, `+${formatNumber(amount)}`, {
+        fontFamily: '"Press Start 2P"',
+        fontSize: '14px',
+        color: '#ffd700',
+        stroke: '#000',
+        strokeThickness: 4
+      }).setOrigin(0.5);
+
+      this.tweens.add({
+        targets: text,
+        y: centerY - 120,
+        alpha: 0,
+        scale: 1.5,
+        duration: 1000,
+        ease: 'Power2',
+        onComplete: () => text.destroy()
+      });
+    }
+
+    autoGenerate() {
+      if (gameState.autoPerSecond > 0) {
+        const earned = gameState.autoPerSecond * gameState.multiplier;
+        gameState.coins += earned;
+        updateStatsDisplay();
+      }
+    }
+
+    checkMultiplier() {
+      if (gameState.multiplier > 1 && Date.now() > gameState.multiplierEndTime) {
+        gameState.multiplier = 1;
+        updateStatsDisplay();
+        showToast('Multiplier expired!', 'error');
+      }
+    }
+
+    update() {
+      // Rotate crystal slowly
+      if (this.crystal) {
+        this.crystal.rotation += 0.002;
+      }
+    }
+  }
+
+  // Game configuration
+  const config = {
+    type: Phaser.AUTO,
+    width: 500,
+    height: 400,
+    parent: 'game-container',
+    backgroundColor: '#0d0d15',
+    scene: MainScene,
+    scale: {
+      mode: Phaser.Scale.NONE,
+      autoCenter: Phaser.Scale.CENTER_BOTH
+    }
+  };
+
+  // Initialize game
+  const game = new Phaser.Game(config);
+
+  // Initial stats update
+  updateStatsDisplay();
+
+  // ===========================================
+  // PRODUCTION TRAILS INTEGRATION
+  // ===========================================
+  /*
+  // For production, replace the TrailsService simulation with:
+
+  import { TrailsApi, TradeType, RouteProvider } from '@0xtrails/api'
+
+  const trailsApi = new TrailsApi('YOUR_ACTUAL_API_KEY')
+
+  async function executePurchase(itemId, chainId) {
+    const item = SHOP_ITEMS[itemId];
+
+    // 1. Quote
+    const quoteResponse = await trailsApi.quoteIntent({
+      ownerAddress: gameState.walletAddress,
+      originChainId: chainId,
+      originTokenAddress: '0x0000000000000000000000000000000000000000',
+      originTokenAmount: ethers.parseEther(item.price.toString()),
+      destinationChainId: 8453, // Base
+      destinationTokenAddress: '0x0000000000000000000000000000000000000000',
+      destinationToAddress: 'YOUR_TREASURY_ADDRESS',
+      tradeType: TradeType.EXACT_INPUT,
+      options: {
+        slippageTolerance: 0.005,
+        bridgeProvider: RouteProvider.AUTO
+      }
+    });
+
+    // 2. Commit
+    const { intentId } = await trailsApi.commitIntent({
+      intent: quoteResponse.intent
+    });
+
+    // 3. Execute
+    await trailsApi.executeIntent({ intentId });
+
+    // 4. Wait
+    const receipt = await trailsApi.waitIntentReceipt({ intentId });
+
+    return receipt;
+  }
+  */
+</script>
+</body>
+</html>

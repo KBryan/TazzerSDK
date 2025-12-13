@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tazzer SDK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/styles.css">
+</head>
+<body>
+  <header>
+    <div class="logo">Tazzer SDK</div>
+    <div class="wallet-section">
+      <span class="wallet-address" id="wallet-display" style="display: none;"></span>
+      <button class="wallet-btn" id="connect-btn">CONNECT WALLET</button>
+    </div>
+  </header>
+
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="stat-label">COINS</div>
+      <div class="stat-value" id="coins-display">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">PER CLICK</div>
+      <div class="stat-value" id="click-power-display">1</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">AUTO/SEC</div>
+      <div class="stat-value" id="auto-display">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">MULTIPLIER</div>
+      <div class="stat-value" id="multiplier-display">1x</div>
+    </div>
+  </div>
+
+  <main>
+    <div id="game-container"></div>
+    
+    <div class="shop-panel">
+      <h2 class="shop-title">⚔️ POWER SHOP ⚔️</h2>
+      <div id="shop-items">
+        <!-- Items populated by JavaScript -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Purchase Modal -->
+  <div class="modal-overlay" id="purchase-modal">
+    <div class="modal">
+      <h3 class="modal-title" id="modal-title">CONFIRM PURCHASE</h3>
+      <p class="modal-text" id="modal-text">Purchase item?</p>
+      
+      <label style="color: #888; font-size: 16px; display: block; margin-bottom: 5px;">Pay from:</label>
+      <select class="chain-select" id="chain-select">
+        <!-- Options populated by JavaScript -->
+      </select>
+      
+      <div class="modal-buttons">
+        <button class="modal-btn cancel">CANCEL</button>
+        <button class="modal-btn confirm" id="confirm-btn">CONFIRM</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
