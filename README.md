@@ -2,7 +2,13 @@
 
 A Phaser 3 clicker game with cross-chain crypto payments via the Trails API. Players mine coins by clicking a crystal and can purchase permanent upgrades using ETH from any supported blockchain.
 
+View the video on YouTube
+
 [![WIZAI](https://img.youtube.com/vi/qw9I5qYthj0/0.jpg)](https://www.youtube.com/watch?v=qw9I5qYthj0)
+
+Read the Medium Article
+
+[Read my latest article on Medium]([medium.com](https://medium.com/@kwame.bryan/building-economic-incentive-games-with-trails-sdk-8e1eec4fcbcb))
 
 
 ## Features
