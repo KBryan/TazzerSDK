@@ -2,7 +2,8 @@
 
 A Phaser 3 clicker game with cross-chain crypto payments via the Trails API. Players mine coins by clicking a crystal and can purchase permanent upgrades using ETH from any supported blockchain.
 
-![Game Screenshot](./screenshot.png)
+<img width="1280" height="720" alt="tazzer" src="https://github.com/user-attachments/assets/828c8628-1617-4638-b61c-b2e82e3243fb" />
+
 
 ## Features
 
