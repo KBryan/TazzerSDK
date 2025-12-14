@@ -141,6 +141,7 @@ const receipt = await trails.waitIntentReceipt(intentId);
 - Avalanche (43114)
 - BNB Chain (56)
 - Blast (81457)
+- Skale Network (Currently in the works)
 
 ## Extending the Game
 
